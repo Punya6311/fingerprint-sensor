@@ -1,0 +1,197 @@
+#include <SoftwareSerial.h>
+#include <Adafruit_Fingerprint.h>
+#include <Servo.h>
+
+#include <LiquidCrystal_I2C.h>
+
+Servo S1;
+SoftwareSerial mySerial(2, 3);
+LiquidCrystal_I2C LCD1(0x27, 16,2);
+
+Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
+
+int fingerprint_ID;
+int Servo_pin1=10;
+int id1 =1;
+int id2 =2;
+int id3=5;
+int id4=6;
+int id5=7;
+int id6=8;
+int id7=9;
+int id8=10; 
+int id9=11;
+int id10=12;
+int id11=13; 
+int id12=14;
+int id13=15;
+int id14=16; 
+int id15=17;
+int id16=18;
+int id17=20;
+int id18=21;
+int id19=22;
+int id30=30;
+int id25=23;
+int id26=26;
+int id27=27;
+int id31=31;  //stored fingerprint data in ID's 
+void setup() 
+{
+	Serial.begin(9600);
+	LCD1.init();
+  LCD1.backlight();
+  LCD1.clear();
+  delay(100);
+  Serial.println("DOOR LOCK SECURITY SYSTEM");
+  LCD1.setCursor(2,0);
+  LCD1.print("DOOR LOCK");
+  LCD1.setCursor(2,1);
+  LCD1.print("SECURITY");
+  S1.attach(Servo_pin1);
+  // set the data rate for the sensor serial port
+  finger.begin(57600);
+  
+  if (finger.verifyPassword()) {
+    Serial.println("Found fingerprint sensor!");
+  } else {
+    Serial.println("Did not find fingerprint sensor :(");
+    while (1) { delay(1); }
+  }
+  finger.getTemplateCount();
+  Serial.print("Sensor contains "); 
+  Serial.print(finger.templateCount); 
+  Serial.println(" templates");
+  Serial.println("Waiting for valid finger...");
+  S1.write(90);
+}
+
+void loop() 
+{
+  Serial.println("DOOR LOCK SECURITY SYSTEM");
+  LCD1.clear();
+  LCD1.setCursor(0,0);
+  LCD1.print("DOOR LOCK");
+  LCD1.setCursor(0,1);
+  LCD1.print("SECURITY");
+  delay(2050);
+  LCD1.clear();
+  LCD1.setCursor(0,0);
+  LCD1.print("PLACE FINGER");
+  delay(2050);
+  getFingerprintIDez();
+  delay(50);
+  Serial.print("Scanned Fingerprint ID = ");
+  Serial.println(fingerprint_ID);
+  delay(1000);
+  if(id1==fingerprint_ID || id2==fingerprint_ID || id3==fingerprint_ID  || id4==fingerprint_ID || id5==fingerprint_ID  || id6==fingerprint_ID  || id7==fingerprint_ID || id9==fingerprint_ID || id10==fingerprint_ID || id11==fingerprint_ID  || id12==fingerprint_ID|| id13==fingerprint_ID || id14==fingerprint_ID || id15==fingerprint_ID || id10==fingerprint_ID || id11==fingerprint_ID  || id12==fingerprint_ID|| id13==fingerprint_ID || id16==fingerprint_ID|| id17==fingerprint_ID  || id18==fingerprint_ID || id19==fingerprint_ID || id25==fingerprint_ID || id26==fingerprint_ID || id27==fingerprint_ID|| id30==fingerprint_ID || id31==fingerprint_ID)
+  {
+    Serial.println("Fingerprint Matched Opening Door!");
+    LCD1.clear();
+    LCD1.setCursor(0,0);
+    LCD1.print("Fingerprint Matched");
+    LCD1.setCursor(0,1);
+    LCD1.print("Opening Door!");
+    fingerprint_ID=0;
+    S1.write(0);
+  }
+  else
+  {
+    Serial.println("Fingerprint Not Matched Try Again!");
+    LCD1.clear();
+    LCD1.setCursor(0,0);
+    LCD1.print(" invalid ");
+    LCD1.setCursor(0,1);
+    LCD1.print("Fingerprint");
+    fingerprint_ID=0;
+    S1.write(90);
+  }
+  delay(2099);
+  Serial.println("");
+}
+
+uint8_t getFingerprintID() {
+  uint8_t p = finger.getImage();
+  switch (p) {
+    case FINGERPRINT_OK:
+      Serial.println("Image taken");
+      break;
+    case FINGERPRINT_NOFINGER:
+      Serial.println("No finger detected");
+      return p;
+    case FINGERPRINT_PACKETRECIEVEERR:
+      Serial.println("Communication error");
+      return p;
+    case FINGERPRINT_IMAGEFAIL:
+      Serial.println("Imaging error");
+      return p;
+    default:
+      Serial.println("Unknown error");
+      return p;
+  }
+
+  // OK success!
+
+  p = finger.image2Tz();
+  switch (p) {
+    case FINGERPRINT_OK:
+      Serial.println("Image converted");
+      break;
+    case FINGERPRINT_IMAGEMESS:
+      Serial.println("Image too messy");
+      return p;
+    case FINGERPRINT_PACKETRECIEVEERR:
+      Serial.println("Communication error");
+      return p;
+    case FINGERPRINT_FEATUREFAIL:
+      Serial.println("Could not find fingerprint features");
+      return p;
+    case FINGERPRINT_INVALIDIMAGE:
+      Serial.println("Could not find fingerprint features");
+      return p;
+    default:
+      Serial.println("Unknown error");
+      return p;
+  }
+  
+  // OK converted!
+  p = finger.fingerFastSearch();
+  if (p == FINGERPRINT_OK) {
+    Serial.println("Found a print match!");
+  } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
+    Serial.println("Communication error");
+    return p;
+  } else if (p == FINGERPRINT_NOTFOUND) {
+    Serial.println("Did not find a match");
+    return p;
+  } else {
+    Serial.println("Unknown error");
+    return p;
+  }   
+  
+  // found a match!
+  Serial.print("Found ID #"); Serial.print(finger.fingerID); 
+  Serial.print(" with confidence of "); Serial.println(finger.confidence); 
+  fingerprint_ID = finger.fingerID;
+  return finger.fingerID;
+}
+
+// returns -1 if failed, otherwise returns ID #
+int getFingerprintIDez() {
+  uint8_t p = finger.getImage();
+  if (p != FINGERPRINT_OK)  return -1;
+
+  p = finger.image2Tz();
+  if (p != FINGERPRINT_OK)  return -1;
+
+  p = finger.fingerFastSearch();
+  if (p != FINGERPRINT_OK)  return -1;
+  
+  // found a match!
+  Serial.print("Found ID #"); 
+  Serial.print(finger.fingerID); 
+  Serial.print(" with confidence of "); 
+  Serial.println(finger.confidence);
+  fingerprint_ID = finger.fingerID;
+  return finger.fingerID; 
+}
